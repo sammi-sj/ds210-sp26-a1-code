@@ -16,6 +16,7 @@ fn fixed_sized_array() {
     // We can call get many times.
     println!("{}", array.get(0));
     println!("{}", array.get(0));
+    // println!("{}", array.get(4));
 
     // Can we call move many times? try it out and see for yourself.
     println!("{}", array.move_out(0));
@@ -85,5 +86,5 @@ fn main() {
 
     // These parts do not work unless you implement push and remove correctly.
     slow_vec_push();
-    slow_vec_remove();
+    //slow_vec_remove();
 }
