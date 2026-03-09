@@ -86,6 +86,7 @@ impl<T> FastVec<T> {
         unsafe {
             ptr::write(self.ptr_to_data.add(self.len), t);
         }
+        self.len +=1;
     }
 
 
