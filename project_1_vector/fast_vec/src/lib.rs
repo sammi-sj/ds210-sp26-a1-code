@@ -1,4 +1,7 @@
-use std::{fmt::{Display, Formatter}, ptr::{self, null_mut}};
+use std::{
+    fmt::{Display, Formatter},
+    ptr::{self, null_mut},
+};
 
 use malloc::MALLOC;
 
@@ -73,11 +76,25 @@ impl<T> FastVec<T> {
     // Student 2 should implement this.
     pub fn push(&mut self, t: T) {
         if self.len == self.capacity {
-            todo!("implement growing the vector by doubling the size!");
-        } else {
-            todo!("implement pushing t directly since the vector still has capacity!");
+            let new_c = self.capacity * 2;
         }
+        let new_ptr = MALLOC.malloc(size_of::<T>() * new_c) as *mut T;
+        unsafe {
+            for i in 0..self.len {
+                let value = ptr::read(self.ptr_to_data.add(i));
+                ptr::write(new_ptr.add(i), value);
+            }
+            MALLOC.free(self.ptr_to_data as *mut u8);
+            self.ptr_to_data = new_ptr;
+            ptr::write(self.ptr_to_data.add(self.len), t);
+        }
+        self.capacity = new_c;
+        unsafe {
+            ptr::write(self.ptr_to_data.add(self.len), t);
+        }
+        self.len +=1;
     }
+
 
     // Student 1 should implement this.
     pub fn remove(&mut self, i: usize) {
@@ -123,7 +140,7 @@ impl<T: Display> Display for FastVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "FastVec[")?;
         if self.len > 0 {
-            for i in 0..self.len()-1 {
+            for i in 0..self.len() - 1 {
                 write!(f, "{}, ", self.get(i))?;
             }
             write!(f, "{}", self.get(self.len - 1))?;
