@@ -70,11 +70,16 @@ impl<T> FastVec<T> {
     // Student 2 should implement this.
     pub fn push(&mut self, t: T) {
         if self.len == self.capacity {
-            self.len = self.len * 2;
+            let new_c = self.capacity * 2;
             unsafe {
-                ptr::write(self.ptr_to_data.add(self.capacity + 1), t);
+                let new_ptr = MALLOC.malloc(size_of::<T>() * new_c) as *mut T;
+                for i in 0..self.len {
+                    let value = ptr::read(self.ptr_to_data.add(i));
+                    ptr::write(new_ptr.add(i), value);
+                self.ptr_to_data = new_ptr;
+
             }
-        }
+
     }
 
     // Student 1 should implement this.
