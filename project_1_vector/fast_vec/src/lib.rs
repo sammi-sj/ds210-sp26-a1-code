@@ -71,16 +71,23 @@ impl<T> FastVec<T> {
     pub fn push(&mut self, t: T) {
         if self.len == self.capacity {
             let new_c = self.capacity * 2;
-            unsafe {
-                let new_ptr = MALLOC.malloc(size_of::<T>() * new_c) as *mut T;
-                for i in 0..self.len {
-                    let value = ptr::read(self.ptr_to_data.add(i));
-                    ptr::write(new_ptr.add(i), value);
-                self.ptr_to_data = new_ptr;
-
+        }
+        let new_ptr = MALLOC.malloc(size_of::<T>() * new_c) as *mut T;
+        unsafe {
+            for i in 0..self.len {
+                let value = ptr::read(self.ptr_to_data.add(i));
+                ptr::write(new_ptr.add(i), value);
             }
-
+            MALLOC.free(self.ptr_to_data as *mut u8);
+            self.ptr_to_data = new_ptr;
+            ptr::write(self.ptr_to_data.add(self.len), t);
+        }
+        self.capacity = new_c;
+        unsafe {
+            ptr::write(self.ptr_to_data.add(self.len), t);
+        }
     }
+
 
     // Student 1 should implement this.
     pub fn remove(&mut self, i: usize) {
@@ -118,4 +125,5 @@ impl<T: Display> Display for FastVec<T> {
         }
         return write!(f, "]");
     }
+}
 }
