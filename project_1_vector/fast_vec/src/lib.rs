@@ -1,4 +1,7 @@
-use std::{fmt::{Display, Formatter}, ptr::{self, null_mut}};
+use std::{
+    fmt::{Display, Formatter},
+    ptr::{self, null_mut},
+};
 
 use malloc::MALLOC;
 
@@ -61,15 +64,16 @@ impl<T> FastVec<T> {
     // Student 1 and Student 2 should implement this together
     // Use the project handout as a guide for this part!
     pub fn get(&self, i: usize) -> &T {
-        todo!("implement get!");
+        unsafe { &*self.ptr_to_data.add(i) }
     }
 
     // Student 2 should implement this.
     pub fn push(&mut self, t: T) {
         if self.len == self.capacity {
-            todo!("implement growing the vector by doubling the size!");
-        } else {
-            todo!("implement pushing t directly since the vector still has capacity!");
+            self.len = self.len * 2;
+            unsafe {
+                ptr::write(self.ptr_to_data.add(self.capacity + 1), t);
+            }
         }
     }
 
@@ -102,7 +106,7 @@ impl<T: Display> Display for FastVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "FastVec[")?;
         if self.len > 0 {
-            for i in 0..self.len()-1 {
+            for i in 0..self.len() - 1 {
                 write!(f, "{}, ", self.get(i))?;
             }
             write!(f, "{}", self.get(self.len - 1))?;
