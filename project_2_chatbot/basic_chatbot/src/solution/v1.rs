@@ -15,12 +15,13 @@ impl ChatbotV1 {
     pub async fn chat_with_user(&mut self, message: String) -> String {
         let mut chat_session: Chat<Llama> = self.model
             .chat()
-            .with_system_prompt("The assistant will act like a fat cat");
-        let response = chat_session.add_message(message).await.expect("Failure");
-        return response.to_string();
+            .with_system_prompt("The assistant will act British");
         // You need to add your code here
         // You must find a way to add the given message to the chat_session!
         // consider https://docs.rs/kalosm/0.4.0/kalosm/language/struct.Chat.html#method.add_message
         // Hint: make sure you transform/extract the response message as a **String**.
+        let output = chat_session.add_message(message).await.expect("failure");
+
+        return output.to_string();
     }
 }
