@@ -1,20 +1,24 @@
 use kalosm::language::*;
-
+use std::collections::HashMap;
 #[allow(dead_code)]
 pub struct ChatbotV3 {
+    model: Llama, sessions: HashMap<String, Chat<Llama>>,
+
     // What should you store inside your Chatbot type?
     // The model? The chat_session?
     // Storing a single chat session is not enough: it mixes messages from different users
     // together!
     // Need to store one chat session per user.
     // Think of some kind of data structure that can help you with this.
+    
 }
 
 impl ChatbotV3 {
     #[allow(dead_code)]
     pub fn new(model: Llama) -> ChatbotV3 {
         return ChatbotV3 {
-            // Make sure you initialize your struct members here
+            // Make sure you initialize your struct members here 
+            model: model.clone(), sessions: HashMap::new()           
         };
     }
 
