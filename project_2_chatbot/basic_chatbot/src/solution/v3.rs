@@ -36,6 +36,7 @@ impl ChatbotV3 {
         .add_message(message) 
         .await
         .expect("failure");
+
         return output.to_string();    
     }
 
