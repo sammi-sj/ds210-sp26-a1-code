@@ -28,7 +28,14 @@ impl ChatbotV3 {
         // Notice, you are given both the `message` and also the `username`.
         // Use this information to select the correct chat session for that user and keep it
         // separated from the sessions of other users.
-        return String::from("Hello, I am not a bot (yet)!");
+        if !self.sessions.contains_key(&username) {
+            let chat_session = self.model.chat()
+                .with_system_prompt("The assistant will act like a fat cat");
+            self.sessions.insert(username.clone(), chat_session);
+        }
+        let chat_session = self.sessions.get_mut(&username).unwrap();
+        let output = chat_session.add_message(message).await.expect("Failure");
+        return output.to_string();
     }
 
     #[allow(dead_code)]
@@ -37,6 +44,18 @@ impl ChatbotV3 {
         // Hint: think of how you can retrieve the Chat object for that user, when you retrieve it
         // you may want to use https://docs.rs/kalosm/0.4.0/kalosm/language/struct.Chat.html#method.session
         // to then retrieve the history!
-        return Vec::new();
+        match self.sessions.get(&username) {
+        Some(chat) => {
+            match chat.session() {
+                Ok(session) => session
+                    .history()
+                    .iter()
+                    .map(|m| format!("{:?}", m)) //Looked up ways to traverse through HashMap and retrieve the messages as a string
+                    .collect(),
+                Err(_) => Vec::new(),
+            }
+        }
+        None => Vec::new(),
+    }
     }
 }
