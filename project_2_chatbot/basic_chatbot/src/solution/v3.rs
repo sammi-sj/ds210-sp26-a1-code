@@ -45,6 +45,18 @@ impl ChatbotV3 {
         // Hint: think of how you can retrieve the Chat object for that user, when you retrieve it
         // you may want to use https://docs.rs/kalosm/0.4.0/kalosm/language/struct.Chat.html#method.session
         // to then retrieve the history!
-        return Vec::new();
+        match self.sessions.get(&username) {
+        Some(chat) => {
+            match chat.session() {
+                Ok(session) => session
+                    .history()
+                    .iter()
+                    .map(|m| format!("{:?}", m)) //Looked up ways to traverse through HashMap and retrieve the messages as a string
+                    .collect(),
+                Err(_) => Vec::new(),
+            }
+        }
+        None => Vec::new(),
+    }
     }
 }
