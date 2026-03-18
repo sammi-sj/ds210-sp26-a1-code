@@ -28,7 +28,15 @@ impl ChatbotV3 {
         // Notice, you are given both the `message` and also the `username`.
         // Use this information to select the correct chat session for that user and keep it
         // separated from the sessions of other users.
-        return String::from("Hello, I am not a bot (yet)!");
+        let chat = self.sessions.entry(username.clone()).or_insert_with(|| {
+            self.model.chat().with_system_prompt("The assistant will act Australian")
+        });
+
+        let output = chat
+        .add_message(message) 
+        .await
+        .expect("failure");
+        return output.to_string();    
     }
 
     #[allow(dead_code)]
