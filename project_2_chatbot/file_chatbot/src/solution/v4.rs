@@ -13,7 +13,7 @@ impl ChatbotV4 {
     }
 
     pub async fn chat_with_user(&mut self, username: String, message: String) -> String {
-        //let filename = &format!("{}.txt", username);
+        let filename = &format!("{}.txt", username);
 
         let mut chat_session = self.model
             .chat()
@@ -25,7 +25,7 @@ impl ChatbotV4 {
         }
 
         // Get response from model
-        let output = chat_session.send_message(&message).await.unwrap_or_default();
+        let output = chat_session.add_message(&message).await.unwrap_or_default();
 
         // Save updated session to file
         if let Ok(session) = chat_session.session() {
