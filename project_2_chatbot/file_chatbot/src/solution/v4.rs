@@ -15,16 +15,24 @@ impl ChatbotV4 {
     pub async fn chat_with_user(&mut self, username: String, message: String) -> String {
         let filename = &format!("{}.txt", username);
 
-        let mut chat_session: Chat<Llama> = self.model
+        let mut chat_session = self.model
             .chat()
             .with_system_prompt("The assistant will act like a pirate");
 
-        // TODO: You have to implement the rest:
-        // You need to load the chat session from the file using file_library::load_chat_session_from_file(...).
-        // Think about what needs to happen if the function returns None vs Some(session).
-        // Hint: look at https://docs.rs/kalosm/latest/kalosm/language/struct.Chat.html#method.with_session
+        // Load previous chat history if it exists
+        if let Some(session) = file_library::load_chat_session_from_file(&filename) {
+            chat_session = chat_session.with_session(session);
+        }
 
-        return String::from("Hello, I am not a bot (yet)!");
+        // Get response from model
+        let output = chat_session.send_message(&message).await.unwrap_or_default();
+
+        // Save updated session to file
+        if let Ok(session) = chat_session.session() {
+            file_library::save_chat_session_to_file(&filename, &session);
+        }
+
+        output
     }
 
     pub fn get_history(&self, username: String) -> Vec<String> {
