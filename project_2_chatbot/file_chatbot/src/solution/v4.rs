@@ -13,26 +13,27 @@ impl ChatbotV4 {
     }
 
     pub async fn chat_with_user(&mut self, username: String, message: String) -> String {
-        let filename = format!("{}.txt", username);
+        let filename = &format!("{}.txt", username);
 
         let mut chat_session = self.model
             .chat();
-        // Load previous chat history if it exists
-        if let Some(session) = file_library::load_chat_session_from_file(&filename) {
-            chat_session = chat_session.with_session(session);
-        }
-        else {
+
+        match file_library::load_chat_session_from_file(&filename) {
+            Some(session) => {
+                chat_session = chat_session.with_session(session);
+    }
+            None => {
             chat_session = chat_session.with_system_prompt("The assistant will act like a pirate");
-
-        }
-        // Get response from model
-        let output = chat_session.add_message(&message).await.unwrap_or_default();
-
-        // Save updated session to file
-        if let Ok(session) = chat_session.session() {
-            file_library::save_chat_session_to_file(&filename, &session);
+            }
         }
 
+        let output = chat_session.add_message(&message).await.unwrap();
+
+        match chat_session.session() {
+            Ok(session) => {file_library::save_chat_session_to_file(&filename, &session);
+            }
+            Err(_) => {}
+        }
         output
     }
 
@@ -48,10 +49,10 @@ impl ChatbotV4 {
                 .filter_map(|message: &kalosm::language::ChatMessage| {
                     match message.role() {
                         MessageType::UserMessage => {
-                            Some(format!("user: {}", message.content()))
+                            Some(format!("{}", message.content()))
                         }
                         MessageType::ModelAnswer => {
-                            Some(format!("assistant: {}", message.content()))
+                            Some(format!("{}", message.content()))
                         }
                         MessageType::SystemPrompt => None,
                     }

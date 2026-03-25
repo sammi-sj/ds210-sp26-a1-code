@@ -43,31 +43,58 @@ impl ChatbotV5 {
     }
 
     pub fn get_history(&mut self, username: String) -> Vec<String> {
-        let filename = format!("{}.txt", username);
+        let filename = &format!("{}.txt", username);
+        let cached_chat = self.cache.get_chat(&username);
 
-        if let Some(chat_session) = self.cache.get_chat(&username) {
-            println!("get_history: {username} is in the cache! Nice!");
-            if let Ok(session) = chat_session.session() {
-                return session
-                    .history()
-                    .into_iter()
-                    .map(|msg| msg.content().to_string())
-                    .collect();
+        match cached_chat {
+            None =>{
+                println!("get_history: {username} is not in the cache!");
+                //TODO:The cache does not have the chat. What should you do?
+                //Your code goes here.
+                match file_library::load_chat_session_from_file(&filename) {
+                    None => return Vec::new(),
+
+                    Some (session) => {
+                        let chat_session = self.model.chat().with_session(session.clone());
+                        self.cache.insert_chat(username.clone(), chat_session);
+                        return session
+                        .history()
+                        .iter()
+                        .filter_map(|message: &kalosm::language::ChatMessage| {
+                        match message.role() {
+                            MessageType::UserMessage => {Some(format!("{}", message.content()))}
+                            MessageType::ModelAnswer => {Some(format!("{}", message.content()))}
+                            MessageType::SystemPrompt => None,
+                        }
+                        }
+                        )
+                        .collect();
+                    }              
+                }   
             }
-            return Vec::new();
-        }
 
-        println!("get_history: {username} is not in the cache!");
-        if let Some(session) = file_library::load_chat_session_from_file(&filename) {
-            let chat_session = self.model.chat().with_session(session.clone());
-            self.cache.insert_chat(username.clone(), chat_session);
-            return session
-                .history()
-                .into_iter()
-                .map(|msg| msg.content().to_string())
-                .collect();
-        }
+            Some(chat_session) => {
+                println!("get_history: {username} is in the cache! Nice!");
+                //TODO: The cache has this chat. What should you do?
+                //Your code goes here.
+                match chat_session.session().ok() {
+                    None => return Vec::new(),
 
-        Vec::new()
+                    Some(session) => 
+                    return session
+                    .history()
+                    .iter()
+                    .filter_map(|message: &kalosm::language::ChatMessage| {
+                    match message.role() {
+                        MessageType::UserMessage => {Some(format!("{}", message.content()))}
+                        MessageType::ModelAnswer => {Some(format!("{}", message.content()))}
+                        MessageType::SystemPrompt => None,
+                    }
+                    }      
+                    )
+                .collect(),
+                }
+            }
+        }
     }
 }

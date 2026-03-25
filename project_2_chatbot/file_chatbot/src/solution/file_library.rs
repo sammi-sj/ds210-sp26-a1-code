@@ -13,10 +13,10 @@ use std::fs;
 // Implement this
 pub fn save_chat_session_to_file(filename: &str, session: &LlamaChatSession) {
     // look at fs::write(...)
-    if let Ok(bytes) = session.to_bytes() {
-        let _ = fs::write(filename, bytes);
-    }
+    let session_as_bytes = session.to_bytes().unwrap();
+        let _chat_session = fs::write(filename, session_as_bytes); 
 }
+
 
 // Implement this
 pub fn load_chat_session_from_file(filename: &str) -> Option<LlamaChatSession> {
@@ -25,6 +25,4 @@ pub fn load_chat_session_from_file(filename: &str) -> Option<LlamaChatSession> {
     let bytes = fs::read(filename).ok()?; //Looked up a function that turns a Result into an Option 
     let session = LlamaChatSession::from_bytes(&bytes).ok();
     return session;
-
-
 }
