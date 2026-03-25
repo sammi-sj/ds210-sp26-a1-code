@@ -28,8 +28,8 @@ impl ChatbotV3 {
         // Notice, you are given both the `message` and also the `username`.
         // Use this information to select the correct chat session for that user and keep it
         // separated from the sessions of other users.
-        let chat = self.sessions.entry(username.clone()).or_insert_with(|| {
-            self.model.chat().with_system_prompt("The assistant will act Australian")
+        let chat = 
+            self.sessions.entry(username.clone()).or_insert_with(|| {self.model.chat().with_system_prompt("The assistant will act Australian")
         });
 
         let output = chat
@@ -40,6 +40,7 @@ impl ChatbotV3 {
     }
 
     #[allow(dead_code)]
+<<<<<<< HEAD
 pub fn get_history(&self, username: String) -> Vec<String> {
     match self.sessions.get(&username) {
         Some(chat) => {
@@ -54,9 +55,29 @@ pub fn get_history(&self, username: String) -> Vec<String> {
                     })
                     .collect(),
                 Err(_) => Vec::new(),
+=======
+    pub fn get_history(&self, username: String) -> Vec<String> {
+        match self.sessions.get(&username) {
+            Some(chat) => {
+                match chat.session() {
+                    Ok(session) => session
+                        .history()
+                        .iter()
+                        .filter_map(|m| match m.role() {
+                         MessageType::UserMessage => Some(m.content().to_string()),
+                         MessageType::ModelAnswer => Some(m.content().to_string()),
+                         MessageType::SystemPrompt => None,
+                       })
+                       .collect(),
+                 Err(_) => Vec::new(),
+                }
+>>>>>>> cache_submission
             }
+            None => Vec::new(),
         }
-        None => Vec::new(),
     }
 }
+<<<<<<< HEAD
 }
+=======
+>>>>>>> cache_submission
