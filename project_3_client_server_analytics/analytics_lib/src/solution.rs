@@ -2,12 +2,39 @@ use std::collections::HashMap;
 use crate::dataset::{ColumnType, Dataset, Value, Row};
 use crate::query::{Aggregation, Condition, Query};
 
-pub fn filter_dataset(dataset: &Dataset, filter: &Condition) -> Dataset {
-    todo!("Implement this!");
+pub fn evaluate_condition(row: &Row, condition: &Condition, dataset: &Dataset) -> bool { //helper function
+    match condition {
+        Condition::Equal(col_name, value) => {
+            let col_index = dataset.column_index(col_name);
+            row.get_value(col_index) == value
+        },
+        Condition::Not(inner) => !evaluate_condition(row, inner, dataset),
+        Condition::And(left, right) => evaluate_condition(row, left, dataset) && evaluate_condition(row, right, dataset),
+        Condition::Or(left, right) => evaluate_condition(row, left, dataset) || evaluate_condition(row, right, dataset),
+    }
 }
 
-pub fn group_by_dataset(dataset: Dataset, group_by_column: &String) -> HashMap<Value, Dataset> {
-    todo!("Implement this!");
+pub fn filter_dataset(dataset: &Dataset, filter: &Condition) -> Dataset {
+    //todo!("Implement this!");
+    let mut result = Dataset::new(dataset.columns().clone());
+    for row in dataset.iter() {
+        if evaluate_condition(row, filter, dataset) {
+            result.add_row(row.clone());
+        }
+    }
+    result
+}
+
+pub fn group_by_dataset(dataset: Dataset, group_by_column: &String) -> HashMap<Value, Dataset> { //std1
+    //todo!("Implement this!");
+    let mut result: HashMap<Value, Dataset> = HashMap::new();
+    let col_index = dataset.column_index(group_by_column);
+    for row in dataset.iter() {
+        result.entry(row.get_value(col_index).clone())
+              .or_insert(Dataset::new(dataset.columns().clone()))
+              .add_row(row.clone());
+    }
+    result
 }
 
 pub fn aggregate_dataset(dataset: HashMap<Value, Dataset>, aggregation: &Aggregation) -> HashMap<Value, Value> {
