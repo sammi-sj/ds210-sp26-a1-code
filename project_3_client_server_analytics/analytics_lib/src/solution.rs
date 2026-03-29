@@ -11,7 +11,51 @@ pub fn group_by_dataset(dataset: Dataset, group_by_column: &String) -> HashMap<V
 }
 
 pub fn aggregate_dataset(dataset: HashMap<Value, Dataset>, aggregation: &Aggregation) -> HashMap<Value, Value> {
-    todo!("Implement this!");
+    dataset.into_iter().map(|(group_value, group_dataset)| {
+    let value = match aggregation {
+        Aggregation::Count(_) => {
+            Value::Integer(group_dataset.len() as i32)
+        }
+
+        Aggregation::Sum(column_name) => {
+            let col_index = group_dataset.column_index(column_name);
+            let sum: i32 = group_dataset.iter()
+                .filter_map(|row| {
+                    if let Value::Integer(v) = row.get_value(col_index) {
+                        Some(*v)
+                        } 
+                    else {
+                        None
+                    } })
+                .sum();
+            Value::Integer(sum)
+            }
+        Aggregation::Average(column_name) => {
+            let col_index = group_dataset.column_index(column_name);
+            let values: Vec<i32> = group_dataset.iter()
+                .filter_map(|row| {
+                if let Value::Integer(v) = row.get_value(col_index) {
+                    Some(*v)
+                    } 
+                    else {
+                        None
+                    }
+                    })
+                    .collect();
+
+            let avg = if values.is_empty() { // looked up helper function to confirm that vector is empty 
+                0
+                } 
+                else {
+                    values.iter().sum::<i32>() / values.len() as i32
+                };
+                Value::Integer(avg)
+            }
+        };
+
+        (group_value, value)
+
+    }).collect()
 }
 
 pub fn compute_query_on_dataset(dataset: &Dataset, query: &Query) -> Dataset {
