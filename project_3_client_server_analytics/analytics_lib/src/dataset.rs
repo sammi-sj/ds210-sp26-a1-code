@@ -1,12 +1,14 @@
+use serde::{Deserialize, Serialize};
+
 use std::fmt::{Debug, Display};
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum ColumnType {
     String,
     Integer,
 }
 
-#[derive(Clone, PartialEq, Hash, Eq, Debug, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Hash, Eq, Debug, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Value {
     String(String),
     Integer(i32),
@@ -20,7 +22,7 @@ impl Value {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Row {
     values: Vec<Value>,
 }
@@ -36,11 +38,11 @@ impl Row {
     }
     pub fn move_values(self) -> Vec<Value> {
         return self.values;
-    }
 }
-
+}
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Dataset {
-    columns: Vec<(String, ColumnType)>,
+    columns: Vec<(String, ColumnType)>, 
     rows: Vec<Row>,
 }
 impl Dataset {
