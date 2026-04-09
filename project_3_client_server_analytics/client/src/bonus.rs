@@ -10,16 +10,12 @@ use analytics_lib::dataset::Value;
 fn parse_query_from_string(input: String) -> Query {
     let s: Vec<&str> = input.split_whitespace().collect();
     let col = s[1].to_string();
-    let val = s[3]
-        .trim_matches('"')
-        .to_string();
+    let val = s[3].trim_matches('"').to_string();
     let group_by = s[6].to_string();
     let aggregation_type = s[7];
     let aggregation_col = s[8].to_string();
-    let filter = Condition::Equal(
-        col,
-        Value::String(val),
-    );
+
+    let filter = Condition::Equal(col, Value::String(val),);
     let aggregations = match aggregation_type {
         "COUNT" => Aggregation::Count(aggregation_col),
         "SUM" => Aggregation::Sum(aggregation_col),
