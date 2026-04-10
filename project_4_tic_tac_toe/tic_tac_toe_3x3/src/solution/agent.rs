@@ -12,31 +12,44 @@ impl Agent for SolutionAgent {
     // and <x>, <y> are the position of the move your solution will make.
     fn solve(board: &mut Board, player: Player, _time_limit: u64) -> (i32, usize, usize) {
         if board.game_over() {
-            if board.score() == 1 {
-                println!("X wins");
-                return board.moves();
-            }
-            else if board.score() == &-1 {
-                println!("O wins");
-                return board.moves();
-            }
-            else if board.score() == 0{
-                println!("Draw");
-                return board.moves();
-            }
-        }
-        println!("There are {} moves left", board.moves());
-        board.clone().apply_move(location, player);
+            return (board.score(), 0, 0);      
+    }
+        let mut best_move = (0,0);
+        let maximizing = player == Player::X;
+        let mut best_score = if maximizing {
+            i32::MIN 
+        } else {
+            i32::MAX
+        };
 
-        if player == Player::X {
-            score = SolutionAgent::solve(board, Player::X, _time_limit);
-        }
-        else if player == Player::O {
-            score = SolutionAgent::solve(board, Player::O, _time_limit);
-        }
+        
+        for (x,y) in board.moves() {
+            let mut new_board = board.clone();
+            new_board.apply_move((x, y), player);
+
+            let next_player = match player {
+                Player::X => Player::O,
+                Player::O => Player::X,
+            };
+
+            let (score, _, _) =
+                SolutionAgent::solve(&mut new_board, next_player, _time_limit);
+
+            if maximizing && score > best_score {
+                best_score = score;
+                best_move = (x, y);
+            }
+
+            if !maximizing && score < best_score {
+                best_score = score;
+                best_move = (x, y);
+            }    
+        
+            }
+            return (best_score, best_move.0, best_move.1);
+
     }
         // If you want to make a recursive call to this solution, use
         // `SolutionAgent::solve(...)`
-        unimplemented!("Not yet implemented")
     }
-}
+
