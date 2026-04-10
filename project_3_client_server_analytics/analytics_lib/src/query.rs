@@ -1,5 +1,7 @@
 use crate::dataset::Value;
+use serde::{Serialize, Deserialize}; 
 
+#[derive(Serialize, Deserialize, Clone, Debug)] 
 pub enum Condition {
     Equal(String, Value),
     Not(Box<Condition>),
@@ -7,11 +9,13 @@ pub enum Condition {
     Or(Box<Condition>, Box<Condition>),
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)] 
 pub enum Aggregation {
     Count(String),
     Sum(String),
     Average(String),
 }
+
 impl Aggregation {
     pub fn get_result_column_name(&self) -> String {
         match self {
@@ -22,27 +26,29 @@ impl Aggregation {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Query {
     filter: Condition,
     group_by: String,
     aggregate: Aggregation,
 }
+
 impl Query {
     pub fn new(filter: Condition, group_by: String, aggregate: Aggregation) -> Query {
-        return Query {
+        Query {
             filter,
             group_by,
             aggregate,
-        };
+        }
     }
 
     pub fn get_filter(&self) -> &Condition {
-        return &self.filter;
+        &self.filter
     }
     pub fn get_group_by(&self) -> &String {
-        return &self.group_by;
+        &self.group_by
     }
     pub fn get_aggregate(&self) -> &Aggregation {
-        return &self.aggregate;
+        &self.aggregate
     }
 }

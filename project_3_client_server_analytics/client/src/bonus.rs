@@ -3,13 +3,28 @@ extern crate tarpc;
 use std::time::Instant;
 use std::io::BufRead;
 
-use analytics_lib::query::Query;
 use client::{start_client, solution};
-
+use analytics_lib::query::{Query, Condition, Aggregation};
+use analytics_lib::dataset::Value;
 // Your solution goes here.
 fn parse_query_from_string(input: String) -> Query {
-    todo!("Implement this");
+    let s: Vec<&str> = input.split_whitespace().collect();
+    let col = s[1].to_string();
+    let val = s[3].trim_matches('"').to_string();
+    let group_by = s[6].to_string();
+    let aggregation_type = s[7];
+    let aggregation_col = s[8].to_string();
+
+    let filter = Condition::Equal(col, Value::String(val),);
+    let aggregations = match aggregation_type {
+        "COUNT" => Aggregation::Count(aggregation_col),
+        "SUM" => Aggregation::Sum(aggregation_col),
+        "AVERAGE" => Aggregation::Average(aggregation_col),
+        _ => panic!("Invalid aggregation"),
+    };
+    Query::new(filter, group_by, aggregations)
 }
+
 
 // Each defined rpc generates an async fn that serves the RPC
 #[tokio::main]
