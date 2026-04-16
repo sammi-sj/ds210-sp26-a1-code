@@ -8,22 +8,18 @@ pub struct SolutionAgent {}
 
 impl SolutionAgent {
     fn depth(depth: u32, max_depth: u32) -> bool {
-        depth >= max_depth
-    }
+       depth >= max_depth
 }
-
-// Put your solution here.
-impl Agent for SolutionAgent {
-
-    // Should returns (<score>, <x>, <y>)
-    // where <score> is your estimate for the score of the game
-    // and <x>, <y> are the position of the move your solution will make.
-    fn solve(board: &mut Board, player: Player, _time_limit: u64) -> (i32, usize, usize) {
-        let depth = board.moves().len();
-        if board.game_over() || SolutionAgent::depth(depth as u32, 5){
+fn heuristic(board: &Board) -> i32 {
+        board.score()
+}
+fn minimax(board: &mut Board, player: Player, depth: u32, max_depth: u32) -> (i32, usize, usize) {
+        if board.game_over() {
             return (board.score(), 0, 0);      
         }
-        
+        if Self::depth(depth, max_depth) {
+            return (Self::heuristic(board),0,0);
+        }
         let mut best_move = (0,0);
         let maximizing = player == Player::X; //true if player is X, false if player is O
         let mut best_score = //best score is max if maximizing, min if minimizing
@@ -44,7 +40,7 @@ impl Agent for SolutionAgent {
                     Player::O => Player::X,
                 };
 
-            let (score, _, _) = SolutionAgent::solve(&mut new_board, next_player, _time_limit);
+            let (score, _, _) = Self::minimax(&mut new_board, next_player, depth +1, max_depth);
 
             if maximizing && score > best_score {
                 best_score = score;
@@ -57,5 +53,21 @@ impl Agent for SolutionAgent {
             }    
         }
     return (best_score, best_move.0, best_move.1);
+    }
+}
+// Put your solution here.
+impl Agent for SolutionAgent {
+    
+    // Should returns (<score>, <x>, <y>)
+    // where <score> is your estimate for the score of the game
+    // and <x>, <y> are the position of the move your solution will make.
+    fn solve(board: &mut Board, player: Player, _time_limit: u64) -> (i32, usize, usize) {
+        let remaining = board.moves().len() as u32;
+        let max_depth = if remaining <= 9 {
+            remaining   // full search for 3x3
+        } else {
+        3           // limit for 5x5
+        };
+       SolutionAgent::minimax(board, player, 0, max_depth)
     }
 }
