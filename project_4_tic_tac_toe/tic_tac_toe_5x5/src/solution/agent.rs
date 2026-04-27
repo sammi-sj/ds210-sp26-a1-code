@@ -2,28 +2,26 @@ use tic_tac_toe_stencil::agents::Agent;
 use tic_tac_toe_stencil::board::Board;
 use tic_tac_toe_stencil::player::Player;
 use tic_tac_toe_stencil::board::Cell;
-//use std::{cell::Cell, cmp::{max, min}};
 
 // Your solution solution.
 pub struct SolutionAgent {}
 
 impl SolutionAgent {
-    fn depth(depth: u32, max_depth: u32) -> bool {
-       depth >= max_depth
-    }
-
+    
+    #[inline]
     fn evaluate(x_count: i32, o_count: i32) -> i32 {    
             match (x_count, o_count) {
-                (3, 0) => 1000,
-                (2, 0) => 50,
-                (1, 0) => 5,
-                (0, 3) => -1000,
-                (0, 2) => -50,
-                (0, 1) => -5,
+                //(3, 0) => 1000,
+                (2, 0) => 100,
+                (1, 0) => 10,
+                //(0, 3) => -1000,
+                (0, 2) => -100,
+                (0, 1) => -10,
                 _ => 0,
             }
         }
-
+    
+        #[inline]
     fn evaluate_window(cells: &[&Cell; 3]) -> i32 {
             let mut x = 0;
             let mut o = 0;
@@ -31,43 +29,98 @@ impl SolutionAgent {
                 match *cell {
                     Cell::X => x += 1,
                     Cell::O => o += 1,
+                    Cell::Empty => {},
                     _ => {}
                 }
             }
             Self::evaluate(x, o)
-
         }
 
     fn heuristic(board: &Board) -> i32 {
+        let score = board.score() * 1000;
+        if score > 0 {return 1000};
+        if score < 0 {return -1000};
+        if score == 0 && board.moves().is_empty() {return 0};
+        
         let cells = &board.get_cells();
         let n = cells.len();
-        let mut score = 0;
+        let mut eval = 0;
 
         for i in 0..n {
             for j in 0..n {
                 if j + 2 < n {
-                    score += Self::evaluate_window(&[&(&(*cells)[i])[j], 
-                                                            &cells[i][j + 1], 
-                                                            &cells[i][j + 2]]);
+                    eval += Self::evaluate_window(&[&cells[i][j], 
+                                                    &cells[i][j + 1], 
+                                                    &cells[i][j + 2]]);
                 }
                 if i + 2 < n {
-                    score += Self::evaluate_window(&[&cells[i][j], 
-                                                            &cells[i + 1][j], 
-                                                            &cells[i + 2][j]]);
+                    eval += Self::evaluate_window(&[&cells[i][j], 
+                                                    &cells[i + 1][j], 
+                                                    &cells[i + 2][j]]);
                 }
                 if i + 2 < n && j + 2 < n {
-                    score += Self::evaluate_window(&[&cells[i][j], 
-                                                            &cells[i + 1][j + 1], 
-                                                            &cells[i + 2][j + 2]]);
+                    eval += Self::evaluate_window(&[&cells[i][j], 
+                                                    &cells[i + 1][j + 1], 
+                                                    &cells[i + 2][j + 2]]);
                 }
                 if i + 2 < n && j >= 2 {
-                    score += Self::evaluate_window(&[&cells[i][j], 
-                                                            &cells[i + 1][j - 1], 
-                                                            &cells[i + 2][j - 2]]);
+                    eval += Self::evaluate_window(&[&cells[i][j], 
+                                                    &cells[i + 1][j - 1], 
+                                                    &cells[i + 2][j - 2]]);
                 }
             }
         }
-        score
+        
+        if n > 3 {
+            let center = n / 2;
+                for i in center.saturating_sub(1)..=(center + 1).min(n - 1) {
+                    for j in center.saturating_sub(1)..=(center + 1).min(n - 1) {
+                        match cells[i][j] {
+                            Cell::X => eval += 3,
+                            Cell::O => eval -=3,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        eval
+    }
+
+    fn order_moves(&self, board: &Board, moves: &mut [(usize, usize)], player:Player) {
+        let cells = board.get_cells();
+        let n = cells.len();
+        let center = n / 2;
+
+        moves.sort_by_cached_key(|&(x, y)| {
+            let mut score = 0;
+
+            let (_my_cell, _opp_cell) = match player {
+                Player::X => (Cell::X, Cell::O),
+                Player::O => (Cell::O, Cell::X),
+            };
+
+            let dist = (x as i32 - center as i32).abs() + (y as i32 - center as i32).abs();
+            score -= dist * 10;
+
+            for dx in -1..=1 {
+                for dy in -1..=1 {
+                    let nx = x as i32 + dx;
+                    let ny = y as i32 + dy;
+                    if nx >= 0 && nx < n as i32 && ny >= 0 && ny < n as i32 {
+                        match cells[nx as usize][ny as usize] {
+                            Cell::X if player == Player::X => score += 5,
+                            Cell::O if player == Player::O => score += 5,
+                            Cell::X | Cell::O => score += 2,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            if n > 3 && (x == 0 || x == n - 1 || y == 0 || y == n - 1) {
+                score -= 3;
+            }
+            -score
+        });
     }
 
     fn minimax(
@@ -78,101 +131,91 @@ impl SolutionAgent {
         mut alpha: i32,
         mut beta: i32,
     ) -> (i32, usize, usize) {
-        /*
-        if depth == 0{
-            for (x, y) in board.moves() {
-                board.apply_move((x, y), player);
-                if board.game_over() {
-                    board.undo_move((x, y), player);
-                    return (board.score(), x, y);
-                }
-                board.undo_move((x, y), player);
-            }
+
+        if depth == max_depth {
+            let h = Self::heuristic(board);
+            let depth_factor = (max_depth - depth) as i32;
+            return (h + if h > 0 {depth_factor} else {-depth_factor}, 0, 0);
         }
-        */
         if board.game_over() {
-            return (board.score(), 0, 0);
-        }
-        if Self::depth(depth, max_depth) {
-            if board.score() != 0 {
-                return (board.score(), 0, 0);
-            }
-            return (Self::heuristic(board), usize::MAX, usize::MAX);
-        }
+            let s = board.score();
+            let final_score = if s > 0 {1000} else if s < 0 {-1000} else {0};
+        let depth_penalty = depth as i32 * 100;
+        return (
+            if final_score > 0 {final_score - depth_penalty}
+            else if final_score < 0 {final_score + depth_penalty}
+            else {0},
+            0, 0
+        )};
 
         let maximizing = player == Player::X;
         let mut best_score = if maximizing { i32::MIN } else { i32::MAX };
         let mut best_move = (0, 0);
 
         let mut moves = board.moves();
-        let center = (board.get_cells().len() / 2) as i32;
-        
+        if moves.is_empty() {
+            return (Self::heuristic(board), 0, 0);
+        }
+    let n = board.get_cells().len();
+        let center = n / 2;
         moves.sort_by_key(|&(x, y)| {
-            let dx = x as i32 - center;
-            let dy = y as i32 - center;
-            dx.abs() + dy.abs()
+            let dist = (x as i32 - center as i32).abs() + (y as i32 - center as i32).abs();
+            dist
         });
 
+        let mut first = true;
         for (x, y) in moves {
             board.apply_move((x, y), player);
-
-            let next_player = 
-                if player == Player::X {Player::O}
-                else {Player::X};
-
-            let (score, _, _) = Self::minimax(board, next_player, depth + 1, max_depth, alpha, beta);
+            
+            let next_player = if player == Player::X { Player::O } else { Player::X };
+            
+            let (score, _, _) = Self::minimax(
+                board,
+                next_player,
+                depth + 1,
+                max_depth,
+                alpha,
+                beta,
+            );
+            
             board.undo_move((x, y), player);
 
             if maximizing {
-                if score > best_score {
+                if first || score > best_score {
                     best_score = score;
                     best_move = (x, y);
+                    first = false;
                 }
                 alpha = alpha.max(score);
-            } 
-            else {
-                if score < best_score {
+            } else {
+                if first || score < best_score {
                     best_score = score;
                     best_move = (x, y);
+                    first = false;
                 }
                 beta = beta.min(score);
             }
 
-            if alpha >= beta {break;}
+            if alpha >= beta {
+                break; // Alpha-beta pruning
+            }
         }
 
         (best_score, best_move.0, best_move.1)
     }
 }
 
-
-// Put your solution here.
 impl Agent for SolutionAgent {
-    
-    // Should returns (<score>, <x>, <y>)
-    // where <score> is your estimate for the score of the game
-    // and <x>, <y> are the position of the move your solution will make.
     fn solve(board: &mut Board, player: Player, _time_limit: u64) -> (i32, usize, usize) {
-        let remaining = board.moves().len() as u32;
-        let board_size = board.get_cells().len() as u32;
+        let board_size = board.get_cells().len();
 
-        let max_depth = if board_size == 5 {
-            match remaining {
-                15..=u32::MAX => 2,
-                10..=14 => 3,
-                6..=9 => 4,
-                _ => remaining,
-            }
-        } else {
-            if remaining >= 6 { 5 } else { remaining }
+        // Deeper search for smaller boards, iterative deepening could help
+        let max_depth: u32 = match board_size {
+            3 => 9,      // Full solve for 3x3
+            5 => 6,      // Balanced for 5x5
+            _ => 4,      // Limited for larger boards
         };
 
-        let max_depth = 
-            if player == Player::O {max_depth}
-            else {max_depth + 1};
-
-        
-
-        SolutionAgent::minimax(board, player, 0, max_depth, i32::MIN, i32::MAX)
+        Self::minimax(board, player, 0, max_depth, -10000000, 10000000)
     }
 }
