@@ -161,8 +161,6 @@ impl SolutionAgent {
         // depth limit
         if depth == max_depth {
             let mut h = Self::heuristic(board);
-
-            // ⭐ KEY FIX: O is defensive → punish X threats more
             if player == Player::O {
                 h -= Self::count_threats(board) * 300;
             }
