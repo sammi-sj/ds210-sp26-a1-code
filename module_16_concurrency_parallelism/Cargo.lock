@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "module_12_managed_memory"
+name = "module_16_concurrency_parallelism"
 version = "0.1.0"
